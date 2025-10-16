@@ -1,0 +1,51 @@
+# RAM_Relocator.qtl
+# Core module for tool/infrastructure memory reallocation
+# Integrated test script included
+
+module RAM_Relocator:
+    memory_pool = allocate_dynamic_pool()
+    registry = {}
+
+    def register(tool_id, memory_req):
+        if tool_id in registry:
+            return "Already registered"
+        registry[tool_id] = memory_req
+        return allocate_memory(tool_id, memory_req)
+
+    def allocate_memory(tool_id, memory_req):
+        if memory_pool.has_space(memory_req):
+            memory_pool.assign(tool_id, memory_req)
+            return f"{tool_id} allocated {memory_req}MB"
+        else:
+            attempt_swap(tool_id, memory_req)
+            return f"Swap attempt for {tool_id}"
+
+    def attempt_swap(tool_id, memory_req):
+        freed = memory_pool.evict_low_priority()
+        if freed >= memory_req:
+            memory_pool.assign(tool_id, memory_req)
+            return f"{tool_id} swapped in"
+        return "Memory allocation failed"
+
+    def release(tool_id):
+        if tool_id in registry:
+            memory_pool.release(tool_id)
+            del registry[tool_id]
+            return f"{tool_id} memory released"
+        return "Tool not found"
+
+    def status():
+        return memory_pool.report()
+
+# --- Integrated TestScript ---
+
+test RAM_Relocator_Test:
+    assert register("Guardian", 512) == "Guardian allocated 512MB"
+    assert register("Axon", 256) == "Axon allocated 256MB"
+    assert register("Guardian", 128) == "Already registered"
+    assert release("Guardian") == "Guardian memory released"
+    assert status().includes("Axon")
+
+# Hook to TestHarness
+hook_to_harness("RAM_Relocator_Test")
+

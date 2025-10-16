@@ -1,0 +1,86 @@
+// File: QTL_ProtocolEngine.qtl
+// Location: Helix/QTL/
+// Purpose: Final protocol resolution layer before AxonBridge or fallback execution
+// Notes: Hardened, failsafe-protected, and test_script integrated
+
+module QTL_ProtocolEngine {
+  import QTL_HandshakeManager as handshake
+  import QTL_SchemaValidator as schema
+
+  config {
+    timeout_ms: 2500
+    fallback_mode: true
+    log_channel: "QTL/Protocol"
+  }
+
+  state {
+    active_chain: null
+    auth_passed: false
+    escalation_flag: false
+  }
+
+  function start_negotiation(input) {
+    log("Beginning protocol negotiation...")
+
+    if (!schema.validate(input)) {
+      error("Schema validation failed. Escalating.")
+      escalation_flag = true
+      return "QTL_ESCALATE"
+    }
+
+    if (!handshake.verify_identity(input.client_id)) {
+      error("Identity verification failed.")
+      escalation_flag = true
+      return "QTL_ESCALATE"
+    }
+
+    active_chain = input.protocol_chain
+    auth_passed = true
+    log("Negotiation complete. Chain: " + active_chain)
+    return "QTL_SUCCESS"
+  }
+
+  function fallback() {
+    log("Invoking fallback protocol layer...")
+    return HelixCore.fallback_init()
+  }
+}
+
+// === test_script ===
+test_script {
+  description: "Test QTL Protocol negotiation pipeline"
+
+  steps {
+    simulate_input: {
+      client_id: "dev_test_user",
+      protocol_chain: "CoreQuantum→Bridge→Relay",
+      mock_valid: true
+    }
+
+    run: QTL_ProtocolEngine.start_negotiation(simulate_input)
+
+    assert: {
+      result: "QTL_SUCCESS"
+      flags: {
+        auth_passed: true,
+        escalation_flag: false
+      }
+    }
+
+    simulate_bad_input: {
+      client_id: "corrupt_user",
+      protocol_chain: null,
+      mock_valid: false
+    }
+
+    run: QTL_ProtocolEngine.start_negotiation(simulate_bad_input)
+
+    assert: {
+      result: "QTL_ESCALATE"
+      flags: {
+        escalation_flag: true
+      }
+    }
+  }
+}
+

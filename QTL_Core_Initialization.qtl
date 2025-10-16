@@ -1,0 +1,32 @@
+// File: QTL_Core_Initialization.qtl
+// Path: Helix/Configuration/Applications/QTL/QTL_Core_Initialization.qtl
+// Purpose: Sets up primary handshake and core execution framework for all QTL-compliant modules
+
+module QTL_Core_Initialization {
+  define entrypoint: initialize_qtl_core;
+
+  function initialize_qtl_core() {
+    register_module("QTL_Core");
+    enable_flag("quantum_trust_mode");
+    perform_handshake_sequence("primary_chain");
+
+    if handshake_result != "valid" {
+      escalate_to Harness auto;
+    }
+
+    finalize_init_state("QTL_Ready");
+    return status("initialized");
+  }
+}
+
+/* TEST SCRIPT */
+test QTL_Core_Initialization initialize_qtl_core {
+  case "Standard Init Path" {
+    expect: status == "initialized"
+  }
+  case "Broken Handshake Path" {
+    simulate_failure: handshake_result
+    expect: escalation_triggered("Harness")
+  }
+}
+

@@ -1,0 +1,43 @@
+module HelixGateMain {
+  entrypoint validate_access;
+  
+  function validate_access(user_token, auth_level) {
+    if auth_level == "ROOT" and verify_token(user_token) {
+      return allow_access();
+    }
+    return deny_access();
+  }
+
+  function verify_token(token) {
+    // Use OS hook to validate token
+    return OSAuth.validate(token);
+  }
+
+  function allow_access() {
+    log("Access granted through HelixGate");
+    return true;
+  }
+
+  function deny_access() {
+    log("Access denied through HelixGate");
+    return false;
+  }
+}
+
+/* TEST SCRIPT */
+test HelixGateMain validate_access {
+  case "Valid ROOT token" {
+    input: ["VALID_TOKEN", "ROOT"]
+    expect: true
+  }
+  case "Invalid token" {
+    input: ["INVALID_TOKEN", "ROOT"]
+    expect: false
+  }
+  case "Non-root user" {
+    input: ["VALID_TOKEN", "USER"]
+    expect: false
+  }
+  onFail reroute_to TestHarness auto;
+}
+

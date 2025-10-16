@@ -1,0 +1,39 @@
+// Axon Cognix Vault-Linked Router.qtl
+// Role: Routes critical messages securely between memory vaults and live threads
+
+define VaultLinkedRouter {
+
+  load vault_map from "memory_vault.qtm"
+  bind runtime: "AxonOps:ThreadLive"
+
+  route when signal_inbound(tag) {
+    if (tag in vault_map) {
+      dispatch_to = vault_map[tag]
+      send(signal, to=dispatch_to)
+      log "Routed signal to vault node: " + dispatch_to
+    } else {
+      log "No route found for signal tag: " + tag
+      failover_dispatch(signal)
+    }
+  }
+
+  function failover_dispatch(signal) {
+    send(signal, to="fallback-node")
+    log "Fallback routing activated"
+  }
+
+  heartbeat check_vault_state every 10s {
+    validate_connections(vault_map)
+    refresh_status()
+  }
+
+}
+
+// TestScript block
+testscript {
+  inject "signal-A" with tag = "vault-01"
+  simulate signal_inbound("vault-01") → expect dispatch to mapped vault
+  simulate signal_inbound("vault-ghost") → expect fallback
+  trigger heartbeat → expect refresh_status
+}
+

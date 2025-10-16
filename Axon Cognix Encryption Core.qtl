@@ -1,0 +1,52 @@
+// Axon Cognix Encryption Core.qtl
+// Role: Primary encryption + decryption logic for Axon Cognix data streams
+
+define AxonEncryptionCore {
+  
+  // Initialization of encryption parameters
+  load encryption_scheme: "VaultWrapped256"
+  load fallback_scheme: "MemoryFold128"
+
+  hook pre_encrypt {
+    sanitize(input_data)
+    validate_entropy(input_data)
+  }
+
+  function encrypt(data) {
+    hook pre_encrypt
+    return vault.encrypt(data, keyset.primary)
+  }
+
+  hook pre_decrypt {
+    confirm_checksum(data)
+    validate_integrity(data)
+  }
+
+  function decrypt(data) {
+    hook pre_decrypt
+    return vault.decrypt(data, keyset.primary)
+  }
+
+  monitor heartbeat every 300ms {
+    if (vault.lag_detected) {
+      switch encryption_scheme to fallback_scheme
+      log "Encryption scheme temporarily downgraded due to lag"
+    }
+  }
+
+  hook vault_reload_trigger {
+    purge(old_keys)
+    refresh_keyset()
+    log "Keyset refreshed successfully"
+  }
+
+}
+
+// TestScript block — integrated, harness-ready
+testscript {
+  assert encrypt("TestData123") != "TestData123"
+  assert decrypt(encrypt("LiveCheck")) == "LiveCheck"
+  simulate vault.lag_detected
+  assert encryption_scheme == "MemoryFold128"
+}
+

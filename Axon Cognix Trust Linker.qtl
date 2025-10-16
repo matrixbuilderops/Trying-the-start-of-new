@@ -1,0 +1,39 @@
+// Axon Cognix Trust Linker.qtl
+// Role: Validates trust boundaries + auth links between Axon nodes
+
+define TrustLinker {
+
+  load trust_map from "trusted_nodes.qtm"
+  load auth_protocol: "AxonHandshake"
+
+  hook on_new_connection(node_id) {
+    if (trust_map.includes(node_id)) {
+      approve(node_id)
+      log "Connection approved for node: " + node_id
+    } else {
+      deny(node_id)
+      log "Connection denied for unrecognized node: " + node_id
+    }
+  }
+
+  function refresh_trust_map() {
+    trust_map = fetch_latest_map()
+    log "Trust map updated"
+  }
+
+  event override_trigger {
+    inject temporary_key into trust_map
+    log "Override injected for debugging"
+  }
+
+}
+
+// TestScript block — harness-integrated
+testscript {
+  mock node_id = "node-alpha"
+  inject "node-alpha" into trust_map
+  simulate on_new_connection("node-alpha") → expect approved
+  simulate on_new_connection("node-zeta") → expect denied
+  simulate override_trigger
+}
+

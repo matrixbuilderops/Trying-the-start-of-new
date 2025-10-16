@@ -1,0 +1,23 @@
+// Module: Guardian Daemon
+// Purpose: Background active monitor and watchdog for tool-level configs
+// Dependencies: Config Sync, Error Codes, Alert Dispatch
+
+[guardian::daemon]
+  mode: "active"
+  watch_paths: ["/Helix/Configuration", "/WorldBuilder_Suite/Tools"]
+  heartbeat: 10s
+
+[guardian::daemon::flags]
+  flag::sandbox_breach: "log_and_lock"
+  flag::manual_override: true
+  flag::signature_mismatch: "escalate"
+
+[test_script]
+  trigger: "guardian_daemon_test"
+  steps:
+    - simulate_file_breach("/Helix/Configuration/hook.qtl")
+    - confirm_lock_triggered()
+    - run_heartbeat_validation()
+    - assert_alert_dispatch("HelixOps")
+  expected_outcome: "Daemon triggers defense and sends correct alert"
+

@@ -1,0 +1,28 @@
+// Module: Guardian Controller
+// Purpose: Oversees Guardian process execution and status feedback loops
+// Dependencies: Helix Core, System Runtime, Guardian Daemon
+
+[guardian::controller]
+  load: true
+  secure_channel: "GuardianSocket"
+  boot_sequence: ["validate_config", "init_runtime", "monitor_daemon"]
+
+[guardian::controller::hooks]
+  on_fail: ["reroute_to_harness"]
+  on_patch: ["apply_security_patch", "restart_guardian"]
+
+[guardian::controller::integrity]
+  checksum: auto
+  verify_interval: 300s
+  escalation_mode: "shield"
+
+[test_script]
+  trigger: "guardian_controller_test"
+  steps:
+    - check_socket_active("GuardianSocket")
+    - simulate_daemon_failure()
+    - verify_reroute("HarnessQueue")
+    - assert_patch_response()
+    - assert_controller_restart_success()
+  expected_outcome: "Controller stabilizes after simulated fault"
+

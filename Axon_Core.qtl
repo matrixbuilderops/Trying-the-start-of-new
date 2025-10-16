@@ -1,0 +1,61 @@
+/// AXON CORE MODULE - QTL COMPLIANT
+/// Unified module for proprietary file format handling, encryption, and I/O
+
+module Axon_Core {
+  use QTL.Runtime;
+  use QTL.Harness;
+  use QTL.Stream;
+
+  export AxonController;
+
+  struct AxonConfig {
+    default_path: String;
+    encryption_enabled: Bool;
+    max_buffer: Int;
+  }
+
+  class AxonController {
+    config: AxonConfig;
+    bridge: StreamEncryptor;
+
+    init() {
+      self.config = AxonConfig(
+        default_path = "/Vault/Data/",
+        encryption_enabled = true,
+        max_buffer = 8192
+      );
+      self.bridge = StreamEncryptor::new(self.config.encryption_enabled);
+      Runtime::log("Axon initialized");
+    }
+
+    fn read(file: String) -> Stream {
+      let full_path = self.config.default_path + file;
+      Runtime::log("Reading: " + full_path);
+      let data = Harness::load(full_path);
+      if self.config.encryption_enabled {
+        return self.bridge.decrypt(data);
+      }
+      return data;
+    }
+
+    fn write(file: String, content: Stream) {
+      let full_path = self.config.default_path + file;
+      let payload = if self.config.encryption_enabled {
+        self.bridge.encrypt(content)
+      } else {
+        content
+      };
+      Harness::save(full_path, payload);
+      Runtime::log("Written: " + full_path);
+    }
+  }
+
+  test AxonControllerTest {
+    let controller = AxonController::init();
+    let sample_data = Stream::from("test-payload");
+    controller.write("test_file.axon", sample_data);
+    let read_back = controller.read("test_file.axon");
+    assert(read_back == sample_data);
+    Runtime::log("AxonControllerTest passed");
+  }
+}

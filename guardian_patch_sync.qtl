@@ -1,0 +1,24 @@
+// Module: Guardian Patch Sync
+// Purpose: Handles patch propagation and live updates to Guardian logic
+// Dependencies: HelixGate Relay, UpdateBus, Node Validator
+
+[guardian::patch_sync]
+  sync_mode: "dual-phase"
+  entry_point: "harness_patch"
+  version_tracking: true
+
+[guardian::patch_sync::retry_policy]
+  attempts: 3
+  delay: 15s
+  fallback: "manual_request"
+
+[test_script]
+  trigger: "guardian_patch_sync_test"
+  steps:
+    - simulate_update_patch("v1.3.2")
+    - confirm_checksum_sync()
+    - run_dual_phase_test()
+    - trigger_retry_on_failure()
+    - assert_manual_fallback_ready()
+  expected_outcome: "Patch synchronizes and fallback works on fail"
+
