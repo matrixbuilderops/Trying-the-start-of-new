@@ -1,0 +1,31 @@
+@meta UUID: AUTO-GENERATED
+QTL::Meta
+UUID: qtl-doc-synopsis
+Version: 1.0.0
+Type: Documentation
+Creator: Alex Sorrell
+Generated: 2025-06-18T02:27:52Z
+System: WorldBuilder Suite
+Tool: SuiteSynopsis
+DependsOn: None
+Exposes: All
+QuantumProtected: No
+Description: Summary overview of all front-end and logic tools in the WorldBuilder Suite.
+
+QTL::Summary
+- GodTree: Core logic hub, initializes everything else.
+- Analyzer: Detects syntax, logic, segment issues.
+- Fixer: Cleans and repairs system logic.
+- Ascension: Generates and rewires new tools or files.
+- MindGate: NLP frontend, GPT-2-medium-powered.
+- Ascenda: Twin-detector, bridge scanner.
+- Validator: Static integrity checker (see root).
+- Harness: Central test and routing engine.
+- Configuration: Stores editable and secure system settings.
+
+QTL::Note
+Each tool is wrapped in QuantumProtected format with system test hooks and Helix routing support.
+
+
+[TEST]
+assert true // default test

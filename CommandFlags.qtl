@@ -1,0 +1,44 @@
+@meta UUID: AUTO-GENERATED
+QTL::Meta
+UUID: qtl-cmd-flag-ref
+Version: 1.0.0
+Type: FlagMap
+Creator: Alex Sorrell
+Generated: 2025-06-18T02:27:40Z
+System: WorldBuilder Suite
+Tool: All
+DependsOn: None
+Exposes: DeveloperCLI
+QuantumProtected: No
+Description: Reference document for all CLI flags across the WorldBuilder Suite toolset.
+
+QTL::Flags
+GodTree:
+  --map         Generate connection tree
+  --scan        Resync tools with system
+
+Analyzer:
+  --scan        Analyze segments
+  --compare     Diff previous runs
+  --export      Export results to JSON
+
+Fixer:
+  --run-all     Execute all fixes
+  --dry         Dry run mode
+  --unused      Detect unused files
+  --wire-ai     Auto-wire model files
+
+Ascension:
+  --generate    Create new tool or script
+  --llm         Use LLM for generation
+  --repair      Rebuild logic from history
+  --run-godtree Trigger GodTree after build
+
+Universal:
+  --test        Run harness test
+  --verbose     Output live logs
+  --version     Print version info
+
+
+[TEST]
+assert true // default test
